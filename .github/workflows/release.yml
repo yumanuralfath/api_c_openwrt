@@ -39,7 +39,7 @@ jobs:
           SDK_VERSION=${{ matrix.target.version }}
           SDK_ARCH=${{ matrix.target.arch }}
           SDK_SUBARCH=${{ matrix.target.subarch }}
-          SDK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/${SDK_ARCH}/${SDK_SUBARCH}/openwrt-sdk-${SDK_VERSION}-${SDK_ARCH}-${SDK_SUBARCH}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_URL="https://downloads.openwrt.org/releases/${SDK_VERSION}/targets/${SDK_ARCH}/${SDK_SUBARCH}/openwrt-sdk-${SDK_VERSION}-${SDK_ARCH}-${SDK_SUBARCH}_gcc-7.5.0_musl.Linux-x86_64.tar.xz"
 
           echo "Downloading SDK from ${SDK_URL}"
           wget -q ${SDK_URL} -O openwrt-sdk.tar.xz

@@ -18,6 +18,14 @@
       - [Response Helpers](#response-helpers)
       - [JSON Builders](#json-builders)
       - [System Information](#system-information)
+  - [New Monitoring Endpoints](#new-monitoring-endpoints)
+    - [1. Get All Processes (equivalent to your script without --top)](#1-get-all-processes-equivalent-to-your-script-without-top)
+    - [2. Get Top N Processes (equivalent to your script --top N)](#2-get-top-n-processes-equivalent-to-your-script-top-n)
+    - [3. Memory Summary (detailed memory stats)](#3-memory-summary-detailed-memory-stats)
+    - [4. System Statistics (combined overview)](#4-system-statistics-combined-overview)
+  - [Integration Benefits](#integration-benefits)
+  - [Command Line Equivalents](#command-line-equivalents)
+  - [Usage in Web Interfaces](#usage-in-web-interfaces)
     - [HTTP Methods](#http-methods)
     - [Error Handling](#error-handling)
   - [Configuration](#configuration)
@@ -168,6 +176,151 @@ static void handle_custom_endpoint(struct mg_connection *c, struct mg_http_messa
 - `get_openwrt_version()`
 - `get_uci_config(config_name)`
 
+## New Monitoring Endpoints
+
+### 1. Get All Processes (equivalent to your script without --top)
+
+```bash
+curl http://your-router-ip:9000/api/monitoring/processes
+```
+
+**Response Example:**
+
+```json
+{
+  "success": true,
+  "processes": [
+    {
+      "rank": 1,
+      "pid": 1234,
+      "name": "uhttpd",
+      "rss_kb": 2048,
+      "rss_mb": 2.0
+    },
+    {
+      "rank": 2,
+      "pid": 5678,
+      "name": "kernel",
+      "rss_kb": 1536,
+      "rss_mb": 1.5
+    }
+  ],
+  "summary": {
+    "total_processes": 45,
+    "total_ram_kb": 12345,
+    "total_ram_mb": 12.05,
+    "highest_process": "uhttpd",
+    "highest_ram_kb": 2048,
+    "highest_ram_mb": 2.0
+  }
+}
+```
+
+### 2. Get Top N Processes (equivalent to your script --top N)
+
+```bash
+# Get top 10 processes
+curl http://your-router-ip:9000/api/monitoring/processes/top/10
+
+# Get top 5 processes
+curl http://your-router-ip:9000/api/monitoring/processes/top/5
+```
+
+**Response Example:**
+
+```json
+{
+  "success": true,
+  "limit": 10,
+  "processes": [
+    {
+      "rank": 1,
+      "pid": 1234,
+      "name": "uhttpd",
+      "rss_kb": 2048,
+      "rss_mb": 2.0
+    }
+  ]
+}
+```
+
+### 3. Memory Summary (detailed memory stats)
+
+```bash
+curl http://your-router-ip:9000/api/monitoring/memory/summary
+```
+
+**Response Example:**
+
+```json
+{
+  "success": true,
+  "memory": {
+    "total_kb": 131072,
+    "total_mb": 128.0,
+    "free_kb": 45678,
+    "free_mb": 44.61,
+    "used_kb": 85394,
+    "used_mb": 83.39,
+    "available_kb": 50000,
+    "available_mb": 48.83,
+    "buffers_kb": 2048,
+    "cached_kb": 8192,
+    "usage_percent": 65.15
+  }
+}
+```
+
+### 4. System Statistics (combined overview)
+
+```bash
+curl http://your-router-ip:9000/api/monitoring/system/stats
+```
+
+**Response Example:**
+
+```json
+{
+  "success": true,
+  "system_stats": {
+    "uptime_seconds": "12345.67",
+    "load_average": "0.25 0.30 0.28",
+    "total_processes": 45,
+    "total_process_ram_kb": 12345,
+    "total_process_ram_mb": 12.05,
+    "top_process": {
+      "name": "uhttpd",
+      "pid": 1234,
+      "ram_kb": 2048,
+      "ram_mb": 2.0
+    }
+  }
+}
+```
+
+## Usage in Web Interfaces
+
+You can now easily create web dashboards that consume this data:
+
+```javascript
+// Fetch top 10 processes
+fetch("/api/monitoring/processes/top/10")
+  .then((response) => response.json())
+  .then((data) => {
+    console.log("Top process:", data.processes[0].name);
+    console.log("RAM usage:", data.processes[0].rss_mb + " MB");
+  });
+
+// Fetch memory summary
+fetch("/api/monitoring/memory/summary")
+  .then((response) => response.json())
+  .then((data) => {
+    console.log("Memory usage:", data.memory.usage_percent + "%");
+  });
+```
+
+The monitoring module maintains all the functionality of your original script while providing it through a clean REST API interface!
+
 ### HTTP Methods
 
 The API manager supports:
@@ -273,4 +426,3 @@ When adding new features:
 ## License
 
 This project is part of the OpenWrt ecosystem and follows OpenWrt licensing.
-

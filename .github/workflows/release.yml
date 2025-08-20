@@ -48,8 +48,11 @@ jobs:
           wget -q ${SDK_URL} -O openwrt-sdk.tar.xz
           tar -xf openwrt-sdk.tar.xz
 
-          # Simpan path absolut ke SDK
-          echo "WORK_DIR=$(pwd)/openwrt-sdk-*" >> $GITHUB_ENV
+          # Ganti nama direktori SDK menjadi nama yang pasti "openwrt-sdk"
+          mv openwrt-sdk-* openwrt-sdk
+
+          # Simpan path absolut yang pasti (tanpa wildcard)
+          echo "WORK_DIR=$(pwd)/openwrt-sdk" >> $GITHUB_ENV
 
       # Langkah 3: Salin sumber paket ke dalam SDK (Diperbaiki)
       - name: Install package sources into SDK

@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # Ganti dengan versi OpenWrt dan target arsitektur yang Anda inginkan.
@@ -34,11 +34,10 @@ jobs:
         uses: actions/checkout@v4
 
       # Langkah 2: Siapkan lingkungan Python 2.7
-      - name: Set up Python 2.x
-        uses: actions/setup-python@v5
-        with:
-          # Menginstal Python versi 2.7
-          python-version: "2.7"
+      - name: Install Python 2.x
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python2
 
       # Langkah 3: Unduh dan setup SDK (Diperbaiki)
       - name: Download and setup OpenWrt SDK

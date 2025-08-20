@@ -1,0 +1,30 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=15
+
+USE_PROCD=1
+PROG=/usr/bin/api_c
+
+start_service() {
+  # Pengecekan port ini bagus untuk pemberitahuan, tapi procd akan tetap mencoba menjalankan
+  if netstat -ln | grep -q ":9000 "; then
+    echo "Warning: Port 9000 is already in use by another process."
+  fi
+
+  procd_open_instance
+  procd_set_param command "$PROG"
+  # Opsi respawn agar layanan otomatis berjalan kembali jika crash
+  procd_set_param respawn "${respawn_threshold:-3600}" "${respawn_timeout:-10}" "${respawn_retry:-3}"
+  # Mengarahkan output ke log sistem (bisa dilihat dengan 'logread')
+  procd_set_param stdout 1
+  procd_set_param stderr 1
+  procd_set_param user root
+  procd_close_instance
+
+  echo "api_c service started"
+}
+
+# TIDAK PERLU FUNGSI stop_service(), restart(), atau reload_service()
+# Karena USE_PROCD=1, /etc/rc.common akan menanganinya secara otomatis dan benar.
+# Sistem akan memanggil procd untuk menghentikan layanan yang sudah kita daftarkan di start_service.

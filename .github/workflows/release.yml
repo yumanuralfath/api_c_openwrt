@@ -33,9 +33,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Langkah 2: Mengunduh dan mengekstrak OpenWrt SDK
+      # Langkah 2: Unduh dan setup SDK (Diperbaiki)
       - name: Download and setup OpenWrt SDK
         run: |
+          # Pindah ke direktori di LUAR folder proyek Anda
+          cd ..
+
           SDK_VERSION=${{ matrix.target.version }}
           SDK_ARCH=${{ matrix.target.arch }}
           SDK_SUBARCH=${{ matrix.target.subarch }}
@@ -44,16 +47,18 @@ jobs:
           echo "Downloading SDK from ${SDK_URL}"
           wget -q ${SDK_URL} -O openwrt-sdk.tar.xz
           tar -xf openwrt-sdk.tar.xz
-          mv openwrt-sdk-* openwrt-sdk
-          echo "WORK_DIR=$(pwd)/openwrt-sdk" >> $GITHUB_ENV
 
-      # Langkah 3: Menyiapkan paket Anda di dalam SDK
+          # Simpan path absolut ke SDK
+          echo "WORK_DIR=$(pwd)/openwrt-sdk-*" >> $GITHUB_ENV
+
+      # Langkah 3: Salin sumber paket ke dalam SDK (Diperbaiki)
       - name: Install package sources into SDK
         run: |
-          cd ${{ env.WORK_DIR }}
-          cp -r $GITHUB_WORKSPACE ./package/api_c
+          # Menyalin folder proyek ke dalam direktori package/api_c di dalam SDK
+          # Perintah ini lebih aman dan jelas
+          cp -r $GITHUB_WORKSPACE ${{ env.WORK_DIR }}/package/api_c
 
-      # Langkah 4: Memperbarui feeds dan mengkompilasi paket
+      # Langkah 4: Kompilasi paket (tidak ada perubahan)
       - name: Compile the package
         id: compile
         run: |
@@ -61,25 +66,20 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
           make package/api_c/compile V=s
-          # Cari file .ipk dan simpan path-nya untuk langkah selanjutnya
           IPK_PATH=$(find bin/packages -type f -name "*.ipk")
           echo "ipk_path=${IPK_PATH}" >> $GITHUB_OUTPUT
 
-      # Langkah 5: Unggah sebagai Artifact (HANYA UNTUK PUSH KE BRANCH)
+      # Langkah 5 & 6: Upload artifact dan rilis (tidak ada perubahan)
       - name: Upload IPK as artifact
-        # Kondisi: Jalankan hanya jika pemicunya BUKAN sebuah tag
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4
         with:
           name: api-c-ipk-${{ matrix.target.pkg_arch }}
           path: ${{ env.WORK_DIR }}/${{ steps.compile.outputs.ipk_path }}
 
-      # Langkah 6: Buat Release dan Unggah Aset (HANYA UNTUK TAG)
       - name: Create GitHub Release and Upload Asset
-        # Kondisi: Jalankan hanya jika pemicunya ADALAH sebuah tag
         if: "startsWith(github.ref, 'refs/tags/')"
         uses: softprops/action-gh-release@v2
         with:
-          # Token GITHUB_TOKEN sudah disediakan otomatis oleh GitHub Actions
           token: ${{ secrets.GITHUB_TOKEN }}
           files: ${{ env.WORK_DIR }}/${{ steps.compile.outputs.ipk_path }}

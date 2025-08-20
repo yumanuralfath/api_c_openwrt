@@ -6,9 +6,6 @@ name: Build and Release OpenWrt IPK
 # 2. Setiap kali ada tag baru dengan format 'v*.*.*' di-push
 on:
   push:
-    branches:
-      - main
-      - master
     tags:
       - "v*.*.*"
 

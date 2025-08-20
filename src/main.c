@@ -13,9 +13,30 @@ void signal_handler(int sig) {
 }
 
 // Main event handler - delegates to API manager
+// static void event_handler(struct mg_connection *c, int ev, void *ev_data) {
+//   if (ev == MG_EV_HTTP_MSG) {
+//     struct mg_http_message *hm = (struct mg_http_message *)ev_data;
+//     api_handle_request(&api_manager, c, hm);
+//   }
+// }
+
 static void event_handler(struct mg_connection *c, int ev, void *ev_data) {
   if (ev == MG_EV_HTTP_MSG) {
     struct mg_http_message *hm = (struct mg_http_message *)ev_data;
+
+    // Handle CORS preflight
+    if (mg_strcmp(hm->method, mg_str("OPTIONS")) == 0) {
+      mg_http_reply(
+          c, 200,
+          "Access-Control-Allow-Origin: *\r\n"
+          "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, "
+          "OPTIONS\r\n"
+          "Access-Control-Allow-Headers: Content-Type, Authorization\r\n",
+          "");
+      return;
+    }
+
+    // Normal request
     api_handle_request(&api_manager, c, hm);
   }
 }

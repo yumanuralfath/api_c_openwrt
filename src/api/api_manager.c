@@ -76,7 +76,11 @@ void api_list_routes(api_manager_t *manager, struct mg_connection *c,
 
   strcat(response, "  ]\n}");
 
-  mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s", response);
+  mg_http_reply(c, 200,
+                "Content-Type: application/json\r\n"
+                "Access-Control-Allow-Origin: *\r\n"
+                "Access-Control-Allow-Headers: Content-Type, Authorization\r\n",
+                "%s", response);
   free(response);
 }
 

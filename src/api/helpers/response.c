@@ -5,8 +5,11 @@
 
 void send_json_response(struct mg_connection *c, int status,
                         const char *json_data) {
-  mg_http_reply(c, status, "Content-Type: application/json\r\n", "%s",
-                json_data);
+  mg_http_reply(c, status,
+                "Content-Type: application/json\r\n"
+                "Access-Control-Allow-Origin: *\r\n"
+                "Access-Control-Allow-Headers: Content-Type, Authorization\r\n",
+                "%s", json_data);
 }
 
 void send_success_response(struct mg_connection *c, const char *message,

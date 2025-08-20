@@ -33,7 +33,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Langkah 2: Unduh dan setup SDK (Diperbaiki)
+      # Langkah 2: Siapkan lingkungan Python 2.7
+      - name: Set up Python 2.x
+        uses: actions/setup-python@v5
+        with:
+          # Menginstal Python versi 2.7
+          python-version: "2.7"
+
+      # Langkah 3: Unduh dan setup SDK (Diperbaiki)
       - name: Download and setup OpenWrt SDK
         run: |
           # Pindah ke direktori di LUAR folder proyek Anda
@@ -54,14 +61,14 @@ jobs:
           # Simpan path absolut yang pasti (tanpa wildcard)
           echo "WORK_DIR=$(pwd)/openwrt-sdk" >> $GITHUB_ENV
 
-      # Langkah 3: Salin sumber paket ke dalam SDK (Diperbaiki)
+      # Langkah 4: Salin sumber paket ke dalam SDK (Diperbaiki)
       - name: Install package sources into SDK
         run: |
           # Menyalin folder proyek ke dalam direktori package/api_c di dalam SDK
           # Perintah ini lebih aman dan jelas
           cp -r $GITHUB_WORKSPACE ${{ env.WORK_DIR }}/package/api_c
 
-      # Langkah 4: Kompilasi paket (tidak ada perubahan)
+      # Langkah 5: Kompilasi paket (tidak ada perubahan)
       - name: Compile the package
         id: compile
         run: |
@@ -72,7 +79,7 @@ jobs:
           IPK_PATH=$(find bin/packages -type f -name "*.ipk")
           echo "ipk_path=${IPK_PATH}" >> $GITHUB_OUTPUT
 
-      # Langkah 5 & 6: Upload artifact dan rilis (tidak ada perubahan)
+      # Langkah 6 & 7: Upload artifact dan rilis (tidak ada perubahan)
       - name: Upload IPK as artifact
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4

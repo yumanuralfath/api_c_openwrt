@@ -71,8 +71,8 @@ jobs:
         id: compile
         run: |
           cd ${{ env.WORK_DIR }}
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          ./scripts/feeds update
+          ./scripts/feeds install
           make defconfig
           make package/api_c/compile V=s
           # Cari file .ipk yang spesifik dengan nama paket Anda untuk menghindari hasil ganda

@@ -2,8 +2,7 @@
 name: Build and Release OpenWrt IPK
 
 # Pemicu:
-# 1. Setiap kali ada push ke branch 'main' (atau 'master')
-# 2. Setiap kali ada tag baru dengan format 'v*.*.*' di-push
+# 1. Setiap kali ada push tag dengan format 'v*.*.*'
 on:
   push:
     tags:
@@ -16,7 +15,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        # Ganti dengan versi OpenWrt dan target arsitektur yang Anda inginkan.
+        # Target SDK yang dipakai
         target:
           - {
               version: "19.07.9",
@@ -24,26 +23,24 @@ jobs:
               subarch: "mt76x8",
               pkg_arch: "mipsel_24kc",
             }
-          # Contoh target lain:
+          # Tambah target lain kalau perlu:
           # - { version: "22.03.5", arch: "ramips", subarch: "mt7621", pkg_arch: "mipsel_24kc" }
 
     steps:
-      # Langkah 1: Mengambil kode sumber dari repository
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Langkah 2: Siapkan lingkungan Python 2.7
+      # Step 2: Install Python 2 (dibutuhkan untuk OpenWrt 19.x SDK)
       - name: Install Python 2.x
         run: |
           sudo apt-get update
           sudo apt-get install -y python2
 
-      # Langkah 3: Unduh dan setup SDK (Diperbaiki)
+      # Step 3: Download dan setup OpenWrt SDK
       - name: Download and setup OpenWrt SDK
         run: |
-          # Pindah ke direktori di LUAR folder proyek Anda
           cd ..
-
           SDK_VERSION=${{ matrix.target.version }}
           SDK_ARCH=${{ matrix.target.arch }}
           SDK_SUBARCH=${{ matrix.target.subarch }}
@@ -52,21 +49,16 @@ jobs:
           echo "Downloading SDK from ${SDK_URL}"
           wget -q ${SDK_URL} -O openwrt-sdk.tar.xz
           tar -xf openwrt-sdk.tar.xz
-
-          # Ganti nama direktori SDK menjadi nama yang pasti "openwrt-sdk"
           mv openwrt-sdk-* openwrt-sdk
 
-          # Simpan path absolut yang pasti (tanpa wildcard)
           echo "WORK_DIR=$(pwd)/openwrt-sdk" >> $GITHUB_ENV
 
-      # Langkah 4: Salin sumber paket ke dalam SDK (Diperbaiki)
+      # Step 4: Copy source package ke SDK
       - name: Install package sources into SDK
         run: |
-          # Menyalin folder proyek ke dalam direktori package/api_c di dalam SDK
-          # Perintah ini lebih aman dan jelas
           cp -r $GITHUB_WORKSPACE ${{ env.WORK_DIR }}/package/api_c
 
-      # Langkah 5: Kompilasi paket (tidak ada perubahan)
+      # Step 5: Compile package
       - name: Compile the package
         id: compile
         run: |
@@ -75,20 +67,23 @@ jobs:
           ./scripts/feeds install -a
           make defconfig
           make package/api_c/compile V=s
-          IPK_PATH=$(find bin/packages -type f -name "*.ipk")
-          echo "ipk_path=${IPK_PATH}" >> $GITHUB_OUTPUT
 
-      # Langkah 6 & 7: Upload artifact dan rilis (tidak ada perubahan)
+          # Simpan path absolut .ipk
+          IPK_PATH=$(find ${{ env.WORK_DIR }}/bin/packages -type f -name "*.ipk" | head -n 1)
+          echo "ipk_path=$IPK_PATH" >> $GITHUB_OUTPUT
+
+      # Step 6: Upload artifact kalau bukan release tag
       - name: Upload IPK as artifact
         if: "!startsWith(github.ref, 'refs/tags/')"
         uses: actions/upload-artifact@v4
         with:
           name: api-c-ipk-${{ matrix.target.pkg_arch }}
-          path: ${{ env.WORK_DIR }}/${{ steps.compile.outputs.ipk_path }}
+          path: ${{ steps.compile.outputs.ipk_path }}
 
+      # Step 7: Release ke GitHub kalau push tag
       - name: Create GitHub Release and Upload Asset
         if: "startsWith(github.ref, 'refs/tags/')"
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{ env.WORK_DIR }}/${{ steps.compile.outputs.ipk_path }}
+          files: ${{ steps.compile.outputs.ipk_path }}

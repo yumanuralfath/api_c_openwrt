@@ -51,5 +51,6 @@ void register_system_endpoints(api_manager_t *manager);
 void register_network_endpoints(api_manager_t *manager);
 void register_wireless_endpoints(api_manager_t *manager);
 void register_monitoring_endpoints(api_manager_t *manager);
+void register_database_endpoints(api_manager_t *manager);
 
 #endif // API_MANAGER_H

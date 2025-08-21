@@ -1,6 +1,7 @@
 #include "api_manager.h"
 #include "helpers/response.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void api_manager_init(api_manager_t *manager) {
@@ -54,27 +55,88 @@ void api_handle_request(api_manager_t *manager, struct mg_connection *c,
                       "The requested endpoint does not exist");
 }
 
+// void api_list_routes(api_manager_t *manager, struct mg_connection *c,
+//                      struct mg_http_message *hm) {
+//   char *response = malloc(4096);
+//   strcpy(response, "{\n  \"api\": \"OpenWrt Modular API\",\n  \"version\": "
+//                    "\"1.0\",\n  \"endpoints\": [\n");
+//
+//   for (int i = 0; i < manager->route_count; i++) {
+//     route_t *route = &manager->routes[i];
+//     char endpoint[512];
+//     snprintf(endpoint, sizeof(endpoint),
+//              "    {\n"
+//              "      \"method\": \"%s\",\n"
+//              "      \"path\": \"%s\",\n"
+//              "      \"description\": \"%s\"\n"
+//              "    }%s\n",
+//              method_to_string(route->method), route->path,
+//              route->description, (i < manager->route_count - 1) ? "," : "");
+//     strcat(response, endpoint);
+//   }
+//
+//   strcat(response, "  ]\n}");
+//
+//   mg_http_reply(c, 200,
+//                 "Content-Type: application/json\r\n"
+//                 "Access-Control-Allow-Origin: *\r\n"
+//                 "Access-Control-Allow-Headers: Content-Type,
+//                 Authorization\r\n",
+//                 "%s", response);
+//   free(response);
+// }
+
 void api_list_routes(api_manager_t *manager, struct mg_connection *c,
                      struct mg_http_message *hm) {
-  char *response = malloc(4096);
-  strcpy(response, "{\n  \"api\": \"OpenWrt Modular API\",\n  \"version\": "
-                   "\"1.0\",\n  \"endpoints\": [\n");
-
-  for (int i = 0; i < manager->route_count; i++) {
-    route_t *route = &manager->routes[i];
-    char endpoint[512];
-    snprintf(endpoint, sizeof(endpoint),
-             "    {\n"
-             "      \"method\": \"%s\",\n"
-             "      \"path\": \"%s\",\n"
-             "      \"description\": \"%s\"\n"
-             "    }%s\n",
-             method_to_string(route->method), route->path, route->description,
-             (i < manager->route_count - 1) ? "," : "");
-    strcat(response, endpoint);
+  // Gunakan ukuran yang lebih besar untuk berjaga-jaga
+  size_t response_size = 8192;
+  char *response = malloc(response_size);
+  if (!response) {
+    // Gagal mengalokasikan memori, kirim error server
+    mg_http_reply(c, 500, "", "Internal Server Error: Out of memory");
+    return;
   }
 
-  strcat(response, "  ]\n}");
+  // Gunakan pointer untuk melacak posisi saat ini dan sisa ruang
+  char *p = response;
+  size_t remaining = response_size;
+  int written;
+
+  // Tulis header JSON dengan aman
+  written = snprintf(p, remaining,
+                     "{\n  \"api\": \"OpenWrt Modular API\",\n  \"version\": "
+                     "\"1.0\",\n  \"endpoints\": [\n");
+  p += written;
+  remaining -= written;
+
+  for (int i = 0; i < manager->route_count; i++) {
+    if (remaining <= 1)
+      break; // Hentikan jika buffer hampir penuh
+
+    route_t *route = &manager->routes[i];
+
+    // Tulis setiap endpoint dengan aman, langsung ke buffer response
+    written =
+        snprintf(p, remaining,
+                 "    {\n"
+                 "      \"method\": \"%s\",\n"
+                 "      \"path\": \"%s\",\n"
+                 "      \"description\": \"%s\"\n"
+                 "    }%s\n",
+                 method_to_string(route->method), route->path,
+                 route->description, (i < manager->route_count - 1) ? "," : "");
+
+    p += written;
+    remaining -= written;
+  }
+
+  if (remaining > 5) { // Pastikan ada cukup ruang untuk penutup
+    snprintf(p, remaining, "  ]\n}\n");
+  } else {
+    // Jika tidak, setidaknya tutup array JSON dengan benar
+    strcpy(p - (manager->route_count > 0 ? 2 : 0),
+           "\n  ]\n}\n"); // Menimpa koma terakhir jika ada
+  }
 
   mg_http_reply(c, 200,
                 "Content-Type: application/json\r\n"

@@ -1,0 +1,90 @@
+# Makefile untuk kompilasi dan debugging di PC (Host)
+#
+# Cara Menggunakan:
+#   make -f Makefile.host         -> Mengompilasi program
+#   make -f Makefile.host run     -> Menjalankan program setelah kompilasi
+#   make -f Makefile.host debug   -> Menjalankan program dengan GDB
+#   make -f Makefile.host clean   -> Menghapus file hasil kompilasi
+
+# === Variabel Konfigurasi ===
+
+# Nama compiler C yang akan digunakan (biasanya gcc)
+CC = gcc
+
+# Nama file eksekusi yang akan dihasilkan
+TARGET = api_c_host
+
+# === Flags untuk Compiler dan Linker ===
+
+# CFLAGS: Flags untuk compiler C
+# -g: Menambahkan informasi debug untuk GDB
+# -Wall -Wextra: Menampilkan semua peringatan (warnings) yang umum dan tambahan
+# -I<dir>: Menambahkan direktori ke dalam include path agar header (.h) ditemukan
+CFLAGS = -g -Wall -Wextra \
+         -I. \
+         -I./mongoose \
+         -I./api \
+         -I./api/helpers \
+         -I./api/endpoints
+
+# LDFLAGS: Flags untuk linker (jarang digunakan untuk hal sederhana)
+LDFLAGS =
+
+# LDLIBS: Library yang akan di-link ke program
+# -lsqlite3: Meng-link dengan library SQLite3
+LDLIBS = -lsqlite3
+
+# === Daftar File Source Code ===
+
+# Daftar semua file .c yang menjadi bagian dari proyek
+SRCS = main.c \
+       mongoose/mongoose.c \
+       api/api_manager.c \
+       api/helpers/response.c \
+       api/helpers/system_info.c \
+       api/helpers/database.c \
+       api/endpoints/status.c \
+       api/endpoints/system.c \
+       api/endpoints/network.c \
+       api/endpoints/wireless.c \
+       api/endpoints/monitoring.c \
+       api/endpoints/database.c
+
+# Secara otomatis menghasilkan daftar file objek (.o) dari daftar file source (.c)
+OBJS = $(SRCS:.c=.o)
+
+# === Rules (Aturan) ===
+
+# Aturan default (dijalankan jika hanya mengetik 'make -f Makefile.host')
+all: $(TARGET)
+
+# Aturan untuk membuat file eksekusi final (TARGET)
+# Ini bergantung pada semua file objek (OBJS)
+$(TARGET): $(OBJS)
+	@echo "==> Linking executable: $@"
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	@echo "==> Build finished successfully: ./$@"
+
+# Aturan Pola (Pattern Rule) untuk mengompilasi file .c menjadi .o
+# Ini memberitahu 'make' bagaimana cara mengubah file .c menjadi file .o
+%.o: %.c
+	@echo "==> Compiling: $<"
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Aturan untuk membersihkan direktori dari file hasil kompilasi
+clean:
+	@echo "==> Cleaning build files..."
+	rm -f $(TARGET) $(OBJS)
+
+# Aturan untuk menjalankan program
+run: all
+	@echo "==> Running program..."
+	./$(TARGET)
+
+# Aturan untuk men-debug program dengan GDB
+debug: all
+	@echo "==> Starting GDB..."
+	gdb ./$(TARGET)
+
+# Deklarasi target yang bukan nama file
+.PHONY: all clean run debug

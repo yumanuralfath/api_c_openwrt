@@ -66,7 +66,7 @@ jobs:
           # Perintah ini lebih aman dan jelas
           cp -r $GITHUB_WORKSPACE ${{ env.WORK_DIR }}/package/api_c
 
-      # Langkah 5: Kompilasi paket (tidak ada perubahan)
+      # Langkah 5: Kompilasi paket (DIPERBAIKI)
       - name: Compile the package
         id: compile
         run: |
@@ -75,7 +75,8 @@ jobs:
           ./scripts/feeds install -a
           make defconfig
           make package/api_c/compile V=s
-          IPK_PATH=$(find bin/packages -type f -name "*.ipk")
+          # Cari file .ipk yang spesifik dengan nama paket Anda untuk menghindari hasil ganda
+          IPK_PATH=$(find bin/packages -type f -name "api_c_*.ipk")
           echo "ipk_path=${IPK_PATH}" >> $GITHUB_OUTPUT
 
       # Langkah 6 & 7: Upload artifact dan rilis (tidak ada perubahan)

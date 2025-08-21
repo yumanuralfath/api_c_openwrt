@@ -72,7 +72,7 @@ jobs:
         run: |
           cd ${{ env.WORK_DIR }}
           ./scripts/feeds update -a
-          ./scripts/feeds install libsqlite3
+          ./scripts/feeds install -a
           make defconfig
           make package/api_c/compile V=s
           IPK_PATH=$(find bin/packages -type f -name "*.ipk")
